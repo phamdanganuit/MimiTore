@@ -1,0 +1,115 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # -----------------------------------------------------------
+  # JOB 1: BUILD & PUSH DOCKER IMAGES (Chạy chung cho tiết kiệm thời gian)
+  # -----------------------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build Backend
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-backend:latest
+
+      # Build Frontend
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-frontend:latest
+
+      # Build AI Worker
+      - name: Build & Push AI Worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./worker-ai
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-worker:latest
+
+  # -----------------------------------------------------------
+  # JOB 2: DEPLOY TO AWS EC2 (Backend + Frontend + Redis)
+  # -----------------------------------------------------------
+  deploy-aws:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Copy docker-compose.prod.yml to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "/home/${{ secrets.AWS_USERNAME }}/app/"
+
+      - name: Deploy on AWS EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.AWS_USERNAME }}/app/
+            # Tạo file .env từ Secret
+            echo "${{ secrets.ENV_FILE_AWS }}" > .env
+            
+            # Pull image mới nhất
+            sudo docker-compose -f docker-compose.prod.yml pull
+            
+            # Restart container
+            sudo docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+            
+            # Dọn dẹp image cũ
+            sudo docker image prune -f
+
+  # -----------------------------------------------------------
+  # JOB 3: DEPLOY TO AZURE VM (AI Worker)
+  # -----------------------------------------------------------
+  deploy-azure:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on Azure VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_HOST }}
+          username: ${{ secrets.AZURE_USERNAME }}
+          key: ${{ secrets.AZURE_SSH_KEY }}
+          script: |
+            # Tạo file .env từ Secret (chứa Redis URL trỏ về AWS IP)
+            echo "${{ secrets.ENV_FILE_AZURE }}" > .env
+            
+            # Pull & Run Worker
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-worker:latest
+            
+            # Stop container cũ nếu đang chạy
+            sudo docker stop ai_worker || true
+            sudo docker rm ai_worker || true
+            
+            # Run container mới (Mount volume để cache model)
+            sudo docker run -d --name ai_worker \
+              --restart unless-stopped \
+              --env-file .env \
+              -v /home/${{ secrets.AZURE_USERNAME }}/models:/root/.cache/huggingface \
+              ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-worker:latest
