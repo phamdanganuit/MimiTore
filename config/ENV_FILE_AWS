@@ -1,0 +1,25 @@
+DEBUG=False
+SECRET_KEY=django-insecure-mimitore-prod-key-928374923847
+ALLOWED_HOSTS=44.200.192.50,localhost,127.0.0.1
+
+# --- DATABASE (RDS) ---
+DB_ENGINE=django.db.backends.postgresql
+DB_HOST=mimitore-db.cpie2uwuc6z6.ap-northeast-1.rds.amazonaws.com
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=Mimitore2025Secret
+DB_PORT=5432
+
+# --- REDIS (Nội bộ Docker AWS) ---
+REDIS_PASSWORD=MimitoreRedis2025!
+# Ở file này dùng host là 'redis'
+REDIS_URL=redis://:MimitoreRedis2025!@redis:6379/0
+
+# --- URL HỆ THỐNG ---
+NEXT_PUBLIC_API_URL=http://44.200.192.50:8000
+INTERNAL_SECRET_KEY=SecretKey123
+
+# --- AZURE STORAGE (Tạm thời để trống, update sau) ---
+AZURE_ACCOUNT_NAME=
+AZURE_ACCOUNT_KEY=
+AZURE_CONTAINER=videos

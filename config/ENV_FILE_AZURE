@@ -1,0 +1,15 @@
+# --- KẾT NỐI VỀ REDIS (TẠI AWS) ---
+# Ở đây phải dùng IP Public 44.200.192.50
+REDIS_URL=redis://:MimitoreRedis2025!@44.200.192.50:6379/0
+
+# --- KẾT NỐI VỀ BACKEND (TẠI AWS) ---
+BACKEND_API_URL=http://44.200.192.50:8000/api/internal/webhook/
+INTERNAL_SECRET_KEY=SecretKey123
+
+# --- CẤU HÌNH AI ---
+WHISPER_MODEL_SIZE=medium
+DEVICE=cpu
+COMPUTE_TYPE=int8
+
+# --- AZURE STORAGE (Tạm thời để trống) ---
+AZURE_CONN_STR=
