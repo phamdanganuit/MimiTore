@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Redis chạy trên AWS để cả 2 bên cùng gọi
   redis:
