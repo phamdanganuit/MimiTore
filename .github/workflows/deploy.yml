@@ -75,13 +75,13 @@ jobs:
             echo "${{ secrets.ENV_FILE_AWS }}" > .env
             
             # Pull image mới nhất
-            sudo docker-compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull
             
             # Restart container
-            sudo docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             
             # Dọn dẹp image cũ
-            sudo docker image prune -f
+            docker image prune -f
 
   # -----------------------------------------------------------
   # JOB 3: DEPLOY TO AZURE VM (AI Worker)
@@ -101,14 +101,14 @@ jobs:
             echo "${{ secrets.ENV_FILE_AZURE }}" > .env
             
             # Pull & Run Worker
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-worker:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mimitore-worker:latest
             
             # Stop container cũ nếu đang chạy
-            sudo docker stop ai_worker || true
-            sudo docker rm ai_worker || true
+            docker stop ai_worker || true
+            docker rm ai_worker || true
             
             # Run container mới (Mount volume để cache model)
-            sudo docker run -d --name ai_worker \
+            docker run -d --name ai_worker \
               --restart unless-stopped \
               --env-file .env \
               -v /home/${{ secrets.AZURE_USERNAME }}/models:/root/.cache/huggingface \
