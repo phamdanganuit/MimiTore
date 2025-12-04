@@ -70,6 +70,15 @@ jobs:
           username: ${{ secrets.AWS_USERNAME }}
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
+            # Check if Docker is installed
+            if ! command -v docker &> /dev/null; then
+              echo "Docker is not installed. Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+              sudo usermod -aG docker $USER
+              rm get-docker.sh
+            fi
+            
             cd /home/${{ secrets.AWS_USERNAME }}/app/
             # Tạo file .env từ Secret
             echo "${{ secrets.ENV_FILE_AWS }}" > .env
@@ -97,6 +106,15 @@ jobs:
           username: ${{ secrets.AZURE_USERNAME }}
           key: ${{ secrets.AZURE_SSH_KEY }}
           script: |
+            # Check if Docker is installed
+            if ! command -v docker &> /dev/null; then
+              echo "Docker is not installed. Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+              sudo usermod -aG docker $USER
+              rm get-docker.sh
+            fi
+            
             # Tạo file .env từ Secret (chứa Redis URL trỏ về AWS IP)
             echo "${{ secrets.ENV_FILE_AZURE }}" > .env
             
