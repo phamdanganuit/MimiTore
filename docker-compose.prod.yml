@@ -20,7 +20,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/mimitore-frontend:latest
     restart: always
     ports:
-      - "3000:3000"
+      - "80:3000"
     env_file: .env
 
   # Nginx (Optional nhưng khuyên dùng để làm Reverse Proxy & SSL)
