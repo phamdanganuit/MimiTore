@@ -1,0 +1,5 @@
+faster-whisper
+sudachipy
+sudachidict-core
+redis
+requests
